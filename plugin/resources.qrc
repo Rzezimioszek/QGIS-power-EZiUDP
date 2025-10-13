@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/eziudp_plugin2" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
