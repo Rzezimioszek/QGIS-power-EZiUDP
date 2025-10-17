@@ -1,0 +1,57 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Power EZiUDP
+qgisMinimumVersion=3.22
+qgisMaximiumVersion=3.99
+description=Wtyczka pozwala na proste, szybkie przeszukiwanie i podpinanie usług WMS/WFS z ewidencji zbiorów i uług danych przestrzennych.
+version=1.1
+author=Łukasz Świątek
+email=lukasz.swiatek1996@gmaill.com
+
+about=Cel powstania wtyczki to typowy one weekend procject, ale jeśli masz pomysł na rozbudowe to napisz moge dodać jakąś funkcjonalność lub forkuj z github i sam dodaj.
+
+tracker=https://github.com/Rzezimioszek/QGIS-power-EZiUDP/issues
+repository=https://github.com/Rzezimioszek/QGIS-power-EZiUDP
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=no
+# Uncomment the following line and add your changelog:
+# changelog= 
+	1.1
+	Dodano:
+		* podpis z nazwą jednostki po wskazaniu punktu w zasięgu więcej niż jednej jednostki
+		* wyszukiwanie jednostki po jej nazwie
+		* podpowiedzi w pasku wyszukiwania
+		* błąd z "zamnięciem na amen dockwidget"
+	1.0
+	Dodano:
+		* Pierwsze publiczne wydanie
+
+# Tags are comma separated with spaces allowed
+tags=python,eziudp,ewidencja,usługi przetrzenne,wms,wfs,zbiory
+
+homepage=https://github.com/Rzezimioszek
+category=Plugins
+icon=icon1.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+Category of the plugin: Raster, Vector, Database or Web
+# category=
+
+# If the plugin can run on QGIS Server.
+server=False
+
