@@ -5,13 +5,13 @@
 [general]
 name=Power EZiUDP
 qgisMinimumVersion=3.22
-qgisMaximiumVersion=3.99
-description=Wtyczka pozwala na proste, szybkie przeszukiwanie i podpinanie usług WMS/WFS z ewidencji zbiorów i uług danych przestrzennych.
-version=1.1
+qgisMaximiumVersion=4.99
+description=[PL] Wtyczka pozwala na proste, szybkie przeszukiwanie i podpinanie usług WMS/WFS z ewidencji zbiorów i uług danych przestrzennych. [EN] Plugin allow for simple, fast search and add WMS/WFS services from polish site: "ewidencja zbiorów i usług danych przestrzennych"
+version=1.2
 author=Łukasz Świątek
 email=lukasz.swiatek1996@gmaill.com
 
-about=Cel powstania wtyczki to typowy one weekend procject, ale jeśli masz pomysł na rozbudowe to napisz moge dodać jakąś funkcjonalność lub forkuj z github i sam dodaj.
+about=[PL] Cel powstania wtyczki to typowy one weekend procject, ale jeśli masz pomysł na rozbudowe to napisz moge dodać jakąś funkcjonalność lub forkuj z github i sam dodaj. [EN] Plugin is simple weekend project, but it could be something more in the future.
 
 tracker=https://github.com/Rzezimioszek/QGIS-power-EZiUDP/issues
 repository=https://github.com/Rzezimioszek/QGIS-power-EZiUDP
@@ -21,7 +21,17 @@ repository=https://github.com/Rzezimioszek/QGIS-power-EZiUDP
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-# changelog= 
+changelog= 
+	1.2
+	Dodano:
+		* dodatkowe opcje wyboru dla dodawania WMS/WFS
+		* przeniesiono pasek wyszukiwania na doł wtyczki
+		* opisy w tooltipach
+		* poprawka tytułów warstw, gdy w nagłówku GetCababilities nie ma kodowania znaków
+		* poprawka błędu przy wyszukiwaniu jednostek centralnych
+		* niepodanie terytu lub nazwy wyszukuje wszystkie zbiory dla rodzaju jednostki administracyjnej
+		* wartość w polu wyszukiwana podana po znaku # jest traktowana jako element nazwy zbioru np. "12#egib" z zanzaczonymi powiatami wyszuka zbiory powiatowe egib dla terytów zaczynających się od 12, a "#egib" wyszuka wszystkie zbiory egib dla powiatów
+		* usprawnienie wyszukiwanie powiatów, np. nie trzeba wpisywać "powiat poznań", wystarczy "poznań", aby wyszukać powiaty poznański i Poznań
 	1.1
 	Dodano:
 		* podpis z nazwą jednostki po wskazaniu punktu w zasięgu więcej niż jednej jednostki

@@ -15,7 +15,7 @@ from qgis.core import (
     QgsRasterLayer, QgsVectorLayer, QgsProject, QgsFeatureRequest, QgsGeometry,
     QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsRectangle, QgsFeature, QgsMessageLog, Qgis
 )
-from qgis.PyQt.QtWidgets import QAction, QDialog, QVBoxLayout, QListWidget, QListWidgetItem, QPushButton, QCompleter
+from qgis.PyQt.QtWidgets import QAction, QDialog, QVBoxLayout, QListWidget, QListWidgetItem, QPushButton, QCompleter, QApplication, QToolButton, QMenu
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 import os.path, re, requests
 
@@ -87,9 +87,13 @@ def fetch_capabilities(url: str):
                 url = url.split("?")[0]
                 url += "?SERVICE=WMS&REQUEST=GetCapabilities"
 
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        text = response.text
+        response = requests.get(url, timeout=10, verify=False)
+        # response.raise_for_status()
+        try:
+            raw = response.content
+            text = raw.decode('utf-8', errors='replace')
+        except:
+            text = response.text
 
         names = re.findall(r"<Name.*?>(.*?)</Name>", text)
         titles = re.findall(r"<Title.*?>(.*?)</Title>", text)
@@ -152,6 +156,43 @@ def add_layers_from_service(url: str, iface):
                     else:
                         iface.messageBar().pushWarning("EZiUDP", f"Nie udało się dodać WFS: {layer_name}")
 
+def copy_to_clipboard(text: str):
+    clipboard = QApplication.clipboard()
+    clipboard.setText(text)
+
+def create_action_button(url, iface):
+    btn = QToolButton()
+    btn.setText("Dodaj")
+    btn.setPopupMode(QToolButton.MenuButtonPopup)
+
+    # Menu rozwijane
+    menu = QMenu()
+
+    # Akcje
+    add_action = QAction("Dodaj warstwy", btn)
+    # add_wfs_action = QAction("Dodaj WFS", btn)
+    copy_action = QAction("Kopiuj adres URL", btn)
+    copy_gc = QAction("Kopiuj adres Get Capabilities", btn)
+    # copy_wfs_action = QAction("Kopiuj adres WFS", btn)
+
+    # Podpięcie akcji
+    btn.clicked.connect(lambda: add_layers_from_service(url, iface))
+    add_action.triggered.connect(lambda: add_layers_from_service(url, iface))
+    # add_wfs_action.triggered.connect(lambda: add_service_to_qgis(wfs_url, "WFS"))
+    copy_gc.triggered.connect(lambda: copy_to_clipboard(url))
+    copy_action.triggered.connect(lambda: copy_to_clipboard(url.split("?")[0] if "?" in url else url))
+    # copy_wfs_action.triggered.connect(lambda: copy_to_clipboard(wfs_url))
+
+    # Dodanie do menu
+    menu.addAction(add_action)
+    # menu.addAction(add_wfs_action)
+    menu.addSeparator()
+    menu.addAction(copy_gc)
+    menu.addAction(copy_action)
+    # menu.addAction(copy_wfs_action)
+
+    btn.setMenu(menu)
+    return btn
 
 class TerytSelectionDialog(QDialog):
     """Okno wyboru jednostki TERYT z podświetleniem na mapie.
@@ -257,11 +298,13 @@ class Power_EZiUDP:
 
     def load_teryt_layer(self):
         rodzaj = self.dockwidget.comboBox.currentText()
-        path = os.path.join(self.plugin_dir, f"{rodzaj}.geojson")
-        self.layer_teryt = QgsVectorLayer(path, rodzaj, "ogr")
+        # poprawka wyszukująca tylko warstwy, które powinnny być
+        if rodzaj in ["powiaty", "gminy", "wojewodztwa"]: 
+            path = os.path.join(self.plugin_dir, f"{rodzaj}.geojson")
+            self.layer_teryt = QgsVectorLayer(path, rodzaj, "ogr")
 
-        if not self.layer_teryt.isValid():
-            QtWidgets.QMessageBox.warning(None, "Błąd", f"Nie udało się wczytać warstwy {path}")
+            if not self.layer_teryt.isValid():
+                QtWidgets.QMessageBox.warning(None, "Błąd", f"Nie udało się wczytać warstwy {path}")
 
 
     def tr(self, message):
@@ -435,14 +478,25 @@ class Power_EZiUDP:
     def search_eziudp(self):
         user_text = self.dockwidget.terytInput.text().strip()
         jedn = self.dockwidget.comboBox.currentText()
+        zbior=""
 
         if not user_text:
             if jedn != "jednostki centralne":
-                QtWidgets.QMessageBox.warning(None, "Błąd", "Błąd", "Podaj numer TERYT lub nazwę jednostki.")
-                return
+                QtWidgets.QMessageBox.warning(None, "Błąd", "Podaj numer TERYT lub nazwę jednostki.")
+                # return
+
+        if "#" in user_text:
+            u_splt = user_text.split("#")
+            zbior = u_splt[-1]
+            user_text = u_splt[0]
+            
+
             
         if re.search(r"[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]", user_text):
-            sel = self.search_by_name_and_show_dialog(user_text)
+            if jedn == "powiaty" and "powiat" not in user_text:
+                sel = self.search_by_name_and_show_dialog(f"powiat {user_text}")
+            else:
+                sel = self.search_by_name_and_show_dialog(user_text)
             if not sel:
                 return
             # sel jest teraz wybranym TERYT (kod). Kontynuuj dalej z sel jako teryt.
@@ -450,6 +504,7 @@ class Power_EZiUDP:
         else:
             # normalne zachowanie: interpretuj jako numer teryt
             teryt = user_text
+
         
         if jedn == "powiaty":
             if len(teryt) == 3:
@@ -463,7 +518,7 @@ class Power_EZiUDP:
             jedn = "centralne"
             teryt = "PL"
 
-        url = f"https://integracja.gugik.gov.pl/eziudp/index.php?teryt={teryt}&rodzaj={jedn}&nazwa=&zbior=&temat=&usluga=&adres="
+        url = f"https://integracja.gugik.gov.pl/eziudp/index.php?teryt={teryt}&rodzaj={jedn}&nazwa=&zbior={zbior}&temat=&usluga=&adres="
         try:
             html = requests.get(url, timeout=10).text
         except Exception as e:
@@ -498,18 +553,22 @@ class Power_EZiUDP:
             self.dockwidget.resultsTable.setItem(row, 1, QtWidgets.QTableWidgetItem(organ))
             self.dockwidget.resultsTable.setItem(row, 2, QtWidgets.QTableWidgetItem(rodzaj))
             self.dockwidget.resultsTable.setItem(row, 3, QtWidgets.QTableWidgetItem(teryt))
-            btn_wms = QtWidgets.QPushButton("➕")
-            btn_wfs = QtWidgets.QPushButton("➕")
+            btn_wms = QtWidgets.QPushButton("")
+            btn_wfs = QtWidgets.QPushButton("")
             btn_preview = QtWidgets.QPushButton("🌐")
             btn_inspect = QtWidgets.QPushButton("📃")
             if wms_url:
-                btn_wms.clicked.connect(lambda _, u=wms_url: add_layers_from_service(u, self.iface))
+                btn_wms = create_action_button(wms_url, self.iface)
+                btn_wms.setIcon(QIcon(":/images/themes/default/mActionAddRasterLayer.svg"))
+                # btn_wms.clicked.connect(lambda _, u=wms_url: add_layers_from_service(u, self.iface))
                 btn_preview.clicked.connect(lambda _, t=teryt, u=wms_url: self.open_geoportal_preview(t, u))
             else:
                 btn_wms.setEnabled(False)
                 btn_preview.setEnabled(False)
             if wfs_url:
-                btn_wfs.clicked.connect(lambda _, u=wfs_url: add_layers_from_service(u, self.iface))
+                btn_wfs = create_action_button(wfs_url, self.iface)
+                btn_wfs.setIcon(QIcon(":/images/themes/default/mActionAddOgrLayer.svg"))
+                # btn_wfs.clicked.connect(lambda _, u=wfs_url: add_layers_from_service(u, self.iface))
             else:
                 btn_wfs.setEnabled(False)
             if inspect:

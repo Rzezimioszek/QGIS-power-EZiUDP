@@ -15,11 +15,23 @@
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
+    <item row="3" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="topMargin">
        <number>0</number>
       </property>
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="font">
+         <font>
+          <pointsize>6</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>ŁŚ 2025</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
@@ -112,6 +124,9 @@
           </property>
           <item>
            <widget class="QPushButton" name="searchButton">
+            <property name="toolTip">
+             <string>Wyszukaj wpisany teryt lub nazwę</string>
+            </property>
             <property name="text">
              <string>Wyszukaj 🔎</string>
             </property>
@@ -119,6 +134,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="pointButton">
+            <property name="toolTip">
+             <string>Wskaż na mapie punkt do okoła którego szukać zbioru</string>
+            </property>
             <property name="text">
              <string>Wskaż 📍</string>
             </property>
@@ -130,78 +148,70 @@
       </item>
      </layout>
     </item>
-    <item row="3" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="font">
-         <font>
-          <pointsize>6</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>ŁŚ 2025</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
-    </item>
     <item row="2" column="0">
      <widget class="QTableWidget" name="resultsTable">
       <column>
        <property name="text">
         <string>Identyfikator</string>
        </property>
+       <property name="toolTip">
+        <string>Identyfikator zbioru w EZiUDP</string>
+       </property>
       </column>
       <column>
        <property name="text">
         <string>Organ</string>
+       </property>
+       <property name="toolTip">
+        <string>Ogran administracyjny, który prowadzi zbiór</string>
        </property>
       </column>
       <column>
        <property name="text">
         <string>Typ</string>
        </property>
+       <property name="toolTip">
+        <string>Nazwa zbioru którego dotyczą dane przestrzenne</string>
+       </property>
       </column>
       <column>
        <property name="text">
         <string>TERYT</string>
+       </property>
+       <property name="toolTip">
+        <string>Numer teryt obszaru, którego dotyczy zbiór</string>
        </property>
       </column>
       <column>
        <property name="text">
         <string>WMS</string>
        </property>
+       <property name="toolTip">
+        <string>Przycisk dodający usługę przeglądania do QGIS</string>
+       </property>
       </column>
       <column>
        <property name="text">
         <string>WFS</string>
+       </property>
+       <property name="toolTip">
+        <string>Przycisk dodający usługę pobierania do QGIS</string>
        </property>
       </column>
       <column>
        <property name="text">
         <string>Podgląd</string>
        </property>
+       <property name="toolTip">
+        <string>Podgląd usługi przeglądania WMS w geoportalu krajowym</string>
+       </property>
       </column>
       <column>
        <property name="text">
         <string>Szczegóły</string>
+       </property>
+       <property name="toolTip">
+        <string>Szczegóły zbioru zamieszczone na stronie EZiUDP</string>
        </property>
       </column>
      </widget>
