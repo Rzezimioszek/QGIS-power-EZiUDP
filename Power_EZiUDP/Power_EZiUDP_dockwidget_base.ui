@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>820</width>
-    <height>470</height>
+    <height>431</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,141 +15,11 @@
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="3" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="font">
-         <font>
-          <pointsize>6</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>ŁŚ 2025</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="layoutDirection">
-           <enum>Qt::LeftToRight</enum>
-          </property>
-          <property name="text">
-           <string>Typ wyszukiwanej jednostki</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="terytInput">
-          <property name="placeholderText">
-           <string>Wpisz teryt lub nazwę jednostki</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QComboBox" name="comboBox">
-            <property name="currentText">
-             <string>powiaty</string>
-            </property>
-            <item>
-             <property name="text">
-              <string>powiaty</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>gminy</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>wojewodztwa</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>jednostki centralne</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_3">
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="searchButton">
-            <property name="toolTip">
-             <string>Wyszukaj wpisany teryt lub nazwę</string>
-            </property>
-            <property name="text">
-             <string>Wyszukaj 🔎</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pointButton">
-            <property name="toolTip">
-             <string>Wskaż na mapie punkt do okoła którego szukać zbioru</string>
-            </property>
-            <property name="text">
-             <string>Wskaż 📍</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
     <item row="2" column="0">
      <widget class="QTableWidget" name="resultsTable">
+      <property name="sortingEnabled">
+       <bool>true</bool>
+      </property>
       <column>
        <property name="text">
         <string>Identyfikator</string>
@@ -216,9 +86,252 @@
       </column>
      </widget>
     </item>
+    <item row="3" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="checkSkipEmptyUrl">
+          <property name="text">
+           <string>pomijaj zbiory bez URL</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox">
+          <property name="text">
+           <string>Tryb rozszerzony</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="font">
+           <font>
+            <pointsize>6</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>ŁŚ 2025</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLineEdit" name="jednInput">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string>Nazwa jednostki/Organ</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="frazInput">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string>Fraza w nazwie zbioru</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="adresInput">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string>Adres usługi WMS</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboBox">
+            <property name="currentText">
+             <string>powiaty</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>powiaty</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>gminy</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>wojewodztwa</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>jednostki centralne</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="terytInput">
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="placeholderText">
+           <string>Wpisz teryt lub nazwę jednostki</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="searchButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>64</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Wyszukaj wpisany teryt lub nazwę</string>
+            </property>
+            <property name="text">
+             <string>🔎
+Wyszukaj</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pointButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>64</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Wskaż na mapie punkt do okoła którego szukać zbioru</string>
+            </property>
+            <property name="text">
+             <string>📍
+Wskaż</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>searchButton</tabstop>
+  <tabstop>checkSkipEmptyUrl</tabstop>
+  <tabstop>pointButton</tabstop>
+  <tabstop>resultsTable</tabstop>
+  <tabstop>checkBox</tabstop>
+ </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>jednInput</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>141</x>
+     <y>387</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>178</x>
+     <y>387</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>frazInput</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>138</x>
+     <y>396</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>310</x>
+     <y>373</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>adresInput</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>109</x>
+     <y>396</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>432</x>
+     <y>372</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

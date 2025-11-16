@@ -15,7 +15,10 @@ from qgis.core import (
     QgsRasterLayer, QgsVectorLayer, QgsProject, QgsFeatureRequest, QgsGeometry,
     QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsRectangle, QgsFeature, QgsMessageLog, Qgis
 )
-from qgis.PyQt.QtWidgets import QAction, QDialog, QVBoxLayout, QListWidget, QListWidgetItem, QPushButton, QCompleter, QApplication, QToolButton, QMenu
+from qgis.PyQt.QtWidgets import (QAction, QDialog, QVBoxLayout, QPushButton, 
+                                QCompleter, QApplication, QToolButton, QMenu,
+                                QTableWidget, QTableWidgetItem, QLineEdit,
+                                QHeaderView, QAbstractItemView)
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 import os.path, re, requests
 
@@ -26,30 +29,85 @@ from .Power_EZiUDP_dockwidget import Power_EZiUDPDockwidget
 # ===============================
 # DIALOG WYBORU WARSTW
 # ===============================
+# ===============================
+# DIALOG WYBORU WARSTW (NOWA, ULEPSZONA WERSJA)
+# ===============================
 class LayerSelectionDialog(QDialog):
     def __init__(self, layers, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Wybierz warstwy do dodania")
-        self.resize(400, 300)
+        self.resize(650, 450)  # Zwiększamy rozmiar dla lepszej czytelności tabeli
+
         layout = QVBoxLayout(self)
-        self.list_widget = QListWidget()
+
+        # 1. Pole wyszukiwania (filtrowania)
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("Filtruj po nazwie lub tytule warstwy...")
+        self.search_box.textChanged.connect(self.filter_table)
+        layout.addWidget(self.search_box)
+
+        # 2. Tabela zamiast listy
+        self.table_widget = QTableWidget()
+        self.table_widget.setColumnCount(3)
+        self.table_widget.setHorizontalHeaderLabels(["", "Tytuł", "Nazwa (identyfikator)"])
+        self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_widget.setSortingEnabled(True)
+        
+        # Ustawienie szerokości kolumn
+        header = self.table_widget.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents) # Kolumna z checkboxem
+        header.setSectionResizeMode(1, QHeaderView.Stretch) # Tytuł rozciąga się
+        header.setSectionResizeMode(2, QHeaderView.Interactive) # Nazwę można ręcznie rozszerzyć
+
+        # Wypełnienie tabeli danymi
         for name, title in layers:
-            item = QListWidgetItem(f"{title} ({name})")
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Unchecked)
-            self.list_widget.addItem(item)
-        layout.addWidget(self.list_widget)
+            row_position = self.table_widget.rowCount()
+            self.table_widget.insertRow(row_position)
+            
+            # Kolumna 0: Checkbox
+            check_item = QTableWidgetItem()
+            check_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            check_item.setCheckState(Qt.Unchecked)
+            self.table_widget.setItem(row_position, 0, check_item)
+
+            # Kolumna 1: Tytuł
+            self.table_widget.setItem(row_position, 1, QTableWidgetItem(title))
+
+            # Kolumna 2: Nazwa
+            self.table_widget.setItem(row_position, 2, QTableWidgetItem(name))
+            
+        self.table_widget.resizeColumnToContents(2) # Dopasuj szerokość kolumny z nazwą
+        layout.addWidget(self.table_widget)
+        
+        # 3. Przycisk
         self.btn_ok = QPushButton("Dodaj zaznaczone")
         self.btn_ok.clicked.connect(self.accept)
         layout.addWidget(self.btn_ok)
 
+    def filter_table(self, text):
+        """Filtruje wiersze w tabeli na podstawie wprowadzonego tekstu."""
+        filter_text = text.lower()
+        for row in range(self.table_widget.rowCount()):
+            title_item = self.table_widget.item(row, 1)
+            name_item = self.table_widget.item(row, 2)
+            
+            # Sprawdź, czy tekst filtra pasuje do tytułu lub nazwy
+            matches = (filter_text in title_item.text().lower() or 
+                       filter_text in name_item.text().lower())
+            
+            self.table_widget.setRowHidden(row, not matches)
+
     def get_selected(self):
-        selected = []
-        for i in range(self.list_widget.count()):
-            item = self.list_widget.item(i)
+        """Zwraca listę NAZW (identyfikatorów) zaznaczonych warstw."""
+        selected_names = []
+        for i in range(self.table_widget.rowCount()):
+            item = self.table_widget.item(i, 0) # Item z checkboxem
             if item.checkState() == Qt.Checked:
-                selected.append(item.text())
-        return selected
+                # Pobierz nazwę warstwy z trzeciej kolumny (indeks 2)
+                layer_name = self.table_widget.item(i, 2).text()
+                selected_names.append(layer_name)
+        return selected_names
 
 
 # ===============================
@@ -106,7 +164,6 @@ def fetch_capabilities(url: str):
         print("Błąd pobierania GetCapabilities:", e)
         return [], url
 
-
 def add_layers_from_service(url: str, iface):
     layers, service_type = fetch_capabilities(url)
     if not layers:
@@ -115,42 +172,33 @@ def add_layers_from_service(url: str, iface):
 
     dlg = LayerSelectionDialog(layers)
     if dlg.exec_():
-        selected = dlg.get_selected()
-        if not selected:
+        selected_layer_names = dlg.get_selected() # Teraz dostajemy czystą listę nazw
+        if not selected_layer_names:
             iface.messageBar().pushInfo("EZiUDP", "Nie wybrano żadnych warstw.")
             return
 
-        for layer_text in selected:
-            m = re.search(r"\((.*?)\)$", layer_text)
-            if not m:
-                continue
-            layer_name = m.group(1)
-
+        # Pętla jest teraz znacznie prostsza
+        for layer_name in selected_layer_names:
             if service_type == "WMS":
                 clean_url = re.sub(r"[?&]request=GetCapabilities", "", url, flags=re.I)
                 clean_url = re.sub(r"[?&]service=WMS", "", clean_url, flags=re.I)
                 base_url = clean_url.split("?")[0]
-                params = "?" + "&".join([p for p in clean_url.split("?")[1:] if p])
-                if not params.endswith("&"):
-                    params += "&"
-                layer_url = f"url={base_url}{params}service=WMS&request=GetMap&layers={layer_name}&styles=&format=image/png&crs=EPSG:2180"
-                # rlayer = QgsRasterLayer(layer_url, layer_name, "wms")
-                # layer_url = f"{base_url}{params}&layers={layer_name}&styles=&format=image/png&crs=EPSG:2180"
+                layer_url = f"url={base_url}?service=WMS&request=GetMap&layers={layer_name}&styles=&format=image/png&crs=EPSG:2180"
                 rlayer = QgsRasterLayer(layer_url, layer_name, "wms")
                 if rlayer.isValid():
                     QgsProject.instance().addMapLayer(rlayer)
                 else:
                     iface.messageBar().pushWarning("EZiUDP", f"Nie udało się dodać WMS: {layer_name}")
 
-
             elif service_type == "WFS":
-                layer_url = f"{url}?service=WFS&version=2.0.0&request=GetFeature&typeName={layer_name}"
-                vlayer = QgsVectorLayer(layer_url, layer_name, "WFS")
+                # Próba z wersją 2.0.0, a potem fallback na 1.1.0
+                layer_url_2_0 = f"{url.split('?')[0]}?service=WFS&version=2.0.0&request=GetFeature&typeName={layer_name}"
+                vlayer = QgsVectorLayer(layer_url_2_0, layer_name, "WFS")
                 if vlayer.isValid():
                     QgsProject.instance().addMapLayer(vlayer)
                 else:
-                    layer_url = f"{url}?service=WFS&version=1.1.0&request=GetFeature&typeName={layer_name}"
-                    vlayer = QgsVectorLayer(layer_url, layer_name, "WFS")
+                    layer_url_1_1 = f"{url.split('?')[0]}?service=WFS&version=1.1.0&request=GetFeature&typeName={layer_name}"
+                    vlayer = QgsVectorLayer(layer_url_1_1, layer_name, "WFS")
                     if vlayer.isValid():
                         QgsProject.instance().addMapLayer(vlayer)
                     else:
@@ -160,7 +208,7 @@ def copy_to_clipboard(text: str):
     clipboard = QApplication.clipboard()
     clipboard.setText(text)
 
-def create_action_button(url, iface):
+def create_action_button(url, iface, teryt="X"):
     btn = QToolButton()
     btn.setText("Dodaj")
     btn.setPopupMode(QToolButton.MenuButtonPopup)
@@ -182,6 +230,12 @@ def create_action_button(url, iface):
     copy_gc.triggered.connect(lambda: copy_to_clipboard(url))
     copy_action.triggered.connect(lambda: copy_to_clipboard(url.split("?")[0] if "?" in url else url))
     # copy_wfs_action.triggered.connect(lambda: copy_to_clipboard(wfs_url))
+
+    if teryt != "X":
+        ...
+        # btn_val = QAction("Waliduj usługę", btn)
+        # btn_val.triggered.connect(lambda _, i=inspect_url: QDesktopServices.openUrl(QUrl(i)))
+        # menu.addAction(add_action)
 
     # Dodanie do menu
     menu.addAction(add_action)
@@ -281,6 +335,7 @@ class TerytSelectionDialog(QDialog):
 class Power_EZiUDP:
     def __init__(self, iface):
         self.iface = iface
+        self.canvas = self.iface.mapCanvas()
         self.plugin_dir = os.path.dirname(__file__)
         self.actions = []
         self.menu = self.tr(u'&Power_EZiUDP')
@@ -477,18 +532,14 @@ class Power_EZiUDP:
     # ===============================
     def search_eziudp(self):
         user_text = self.dockwidget.terytInput.text().strip()
+        adres_text = self.dockwidget.adresInput.text().strip()
+        fraz_text = self.dockwidget.frazInput.text().strip()
+        organ_text = self.dockwidget.jednInput.text().strip()
         jedn = self.dockwidget.comboBox.currentText()
-        zbior=""
 
-        if not user_text:
+        if not user_text and not adres_text and not fraz_text and not organ_text:
             if jedn != "jednostki centralne":
                 QtWidgets.QMessageBox.warning(None, "Błąd", "Podaj numer TERYT lub nazwę jednostki.")
-                # return
-
-        if "#" in user_text:
-            u_splt = user_text.split("#")
-            zbior = u_splt[-1]
-            user_text = u_splt[0]
             
 
             
@@ -518,7 +569,7 @@ class Power_EZiUDP:
             jedn = "centralne"
             teryt = "PL"
 
-        url = f"https://integracja.gugik.gov.pl/eziudp/index.php?teryt={teryt}&rodzaj={jedn}&nazwa=&zbior={zbior}&temat=&usluga=&adres="
+        url = f"https://integracja.gugik.gov.pl/eziudp/index.php?teryt={teryt}&rodzaj={jedn}&nazwa={organ_text}&zbior={fraz_text}&temat=&usluga=&adres={adres_text}"
         try:
             html = requests.get(url, timeout=10).text
         except Exception as e:
@@ -548,20 +599,26 @@ class Power_EZiUDP:
             inspect = inspect_match.group(1) if inspect_match else ""
 
             row = self.dockwidget.resultsTable.rowCount()
-            self.dockwidget.resultsTable.insertRow(row)
-            self.dockwidget.resultsTable.setItem(row, 0, QtWidgets.QTableWidgetItem(nazwa))
-            self.dockwidget.resultsTable.setItem(row, 1, QtWidgets.QTableWidgetItem(organ))
-            self.dockwidget.resultsTable.setItem(row, 2, QtWidgets.QTableWidgetItem(rodzaj))
-            self.dockwidget.resultsTable.setItem(row, 3, QtWidgets.QTableWidgetItem(teryt))
+            
+
             btn_wms = QtWidgets.QPushButton("")
             btn_wfs = QtWidgets.QPushButton("")
-            btn_preview = QtWidgets.QPushButton("🌐")
+            btn_preview = QtWidgets.QPushButton("")
             btn_inspect = QtWidgets.QPushButton("📃")
+            btn_teryt = QtWidgets.QPushButton(teryt)
+            btn_teryt.setFlat(True)
+            btn_teryt.clicked.connect(lambda _, t=teryt: self.zoom_to(t))
+
+
+
+            url_count = 0
             if wms_url:
                 btn_wms = create_action_button(wms_url, self.iface)
                 btn_wms.setIcon(QIcon(":/images/themes/default/mActionAddRasterLayer.svg"))
                 # btn_wms.clicked.connect(lambda _, u=wms_url: add_layers_from_service(u, self.iface))
                 btn_preview.clicked.connect(lambda _, t=teryt, u=wms_url: self.open_geoportal_preview(t, u))
+                btn_preview.setText('🌐')
+                url_count += 1
             else:
                 btn_wms.setEnabled(False)
                 btn_preview.setEnabled(False)
@@ -569,6 +626,7 @@ class Power_EZiUDP:
                 btn_wfs = create_action_button(wfs_url, self.iface)
                 btn_wfs.setIcon(QIcon(":/images/themes/default/mActionAddOgrLayer.svg"))
                 # btn_wfs.clicked.connect(lambda _, u=wfs_url: add_layers_from_service(u, self.iface))
+                url_count += 1
             else:
                 btn_wfs.setEnabled(False)
             if inspect:
@@ -577,6 +635,16 @@ class Power_EZiUDP:
             else:
                 btn_inspect.setEnabled(False) 
 
+            if url_count == 0 and self.dockwidget.checkSkipEmptyUrl.isChecked():
+                continue
+
+            # dodawanie danych na końcu powinno mi pozwolić na omijanie zbiorów bez url
+            self.dockwidget.resultsTable.insertRow(row)
+            self.dockwidget.resultsTable.setItem(row, 0, QtWidgets.QTableWidgetItem(nazwa))
+            self.dockwidget.resultsTable.setItem(row, 1, QtWidgets.QTableWidgetItem(organ))
+            self.dockwidget.resultsTable.setItem(row, 2, QtWidgets.QTableWidgetItem(rodzaj))
+            # self.dockwidget.resultsTable.setItem(row, 3, QtWidgets.QTableWidgetItem(teryt))
+            self.dockwidget.resultsTable.setCellWidget(row, 3, btn_teryt)
             self.dockwidget.resultsTable.setCellWidget(row, 4, btn_wms)
             self.dockwidget.resultsTable.setCellWidget(row, 5, btn_wfs)
             self.dockwidget.resultsTable.setCellWidget(row, 6, btn_preview)
@@ -662,6 +730,45 @@ class Power_EZiUDP:
         url = f"https://mapy.geoportal.gov.pl/imap/Imgp_2.html?SRS=2180&resources=map:wms@{wms_url}&bbox={bbox_str}"
 
         QDesktopServices.openUrl(QUrl(url))
+
+    def zoom_to(self, teryt):
+
+        if not self.layer_teryt or not teryt:
+            QtWidgets.QMessageBox.warning(None, "Brak danych", "Brak warstwy TERYT lub numeru.")
+            return
+
+        # Skróć TERYT w zależności od typu jednostki
+        if len(teryt) >= 6:
+            filter_prefix = teryt[:6]
+        elif len(teryt) == 4:
+            filter_prefix = teryt[:4]
+        elif len(teryt) == 3:
+            filter_prefix = f"0{teryt}"
+        else:
+            filter_prefix = teryt[:2]
+
+
+        bbox = None
+        for f in self.layer_teryt.getFeatures():
+            val = str(f["TERYT"])
+            if val.startswith(filter_prefix):
+                geom = f.geometry()
+                rect = geom.boundingBox()
+                bbox = (rect.xMinimum(), rect.yMinimum(), rect.xMaximum(), rect.yMaximum())
+                break
+
+        try:
+
+            self.canvas.setExtent(rect)
+            self.canvas.refresh()
+
+            self.iface.messageBar().pushMessage("Przybliżono do: ",
+                                                 f"{filter_prefix}",
+                                                   level=Qgis.Success, duration=5)
+        except Exception as e:
+            self.iface.messageBar().pushMessage("Error: ",
+                                                 f"{e}",
+                                                   level=Qgis.Critical, duration=5)
 
     def on_unit_type_changed(self, idx):
         self.load_teryt_layer()
