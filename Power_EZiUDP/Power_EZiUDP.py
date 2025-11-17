@@ -18,7 +18,7 @@ from qgis.core import (
 from qgis.PyQt.QtWidgets import (QAction, QDialog, QVBoxLayout, QPushButton, 
                                 QCompleter, QApplication, QToolButton, QMenu,
                                 QTableWidget, QTableWidgetItem, QLineEdit,
-                                QHeaderView, QAbstractItemView)
+                                QHeaderView, QAbstractItemView, QListWidget)
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 import os.path, re, requests
 
