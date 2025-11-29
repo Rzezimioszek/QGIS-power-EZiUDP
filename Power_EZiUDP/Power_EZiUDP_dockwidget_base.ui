@@ -17,6 +17,12 @@
    <layout class="QGridLayout" name="gridLayout">
     <item row="2" column="0">
      <widget class="QTableWidget" name="resultsTable">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
       <property name="sortingEnabled">
        <bool>true</bool>
       </property>
@@ -194,14 +200,31 @@
          </layout>
         </item>
         <item>
-         <widget class="QLineEdit" name="terytInput">
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="topMargin">
+           <number>0</number>
           </property>
-          <property name="placeholderText">
-           <string>Wpisz teryt lub nazwę jednostki</string>
-          </property>
-         </widget>
+          <item>
+           <widget class="QPushButton" name="updateButton">
+            <property name="toolTip">
+             <string>Backup jest wykorzystywany w sytuacji braku dostępu do serwerów EZiUDP. Aktualizuj aby utrzymać atualne adresy w bazie backup (SQLite)</string>
+            </property>
+            <property name="text">
+             <string>Aktualizuj backup</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="terytInput">
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="placeholderText">
+             <string>Wpisz teryt lub nazwę jednostki</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>

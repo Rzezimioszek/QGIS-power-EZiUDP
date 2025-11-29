@@ -9,7 +9,7 @@ Power_EZiUDP
 """
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QUrl, QStringListModel
-from qgis.PyQt.QtGui import QIcon, QDesktopServices, QColor
+from qgis.PyQt.QtGui import QIcon, QDesktopServices, QColor, QCursor 
 from qgis.PyQt import QtWidgets
 from qgis.core import (
     QgsRasterLayer, QgsVectorLayer, QgsProject, QgsFeatureRequest, QgsGeometry,
@@ -18,12 +18,14 @@ from qgis.core import (
 from qgis.PyQt.QtWidgets import (QAction, QDialog, QVBoxLayout, QPushButton, 
                                 QCompleter, QApplication, QToolButton, QMenu,
                                 QTableWidget, QTableWidgetItem, QLineEdit,
-                                QHeaderView, QAbstractItemView, QListWidget)
+                                QHeaderView, QAbstractItemView, QListWidget, QMessageBox)
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
-import os.path, re, requests
+import os.path, re, requests, sqlite3
 
 from .resources import *
 from .Power_EZiUDP_dockwidget import Power_EZiUDPDockwidget
+
+import webbrowser
 
 
 # ===============================
@@ -164,6 +166,23 @@ def fetch_capabilities(url: str):
         print("Błąd pobierania GetCapabilities:", e)
         return [], url
 
+def validate_service(url, teryt, baza, iface):
+
+    if 'service=WFS' in url:
+        typ = "wfs"
+    else:
+        typ= "wms"
+
+    wzorzec = r'\((.*?)\)'
+    dane= re.findall(wzorzec, baza)[0]
+
+    url = url.split("?")[0]
+
+    validate_url = f" https://walidator.gugik.gov.pl/service?url={url}&typ={typ}&dane={dane}&teryt={teryt}"
+    # iface.messageBar().pushWarning("EZiUDP", f"{validate_url}")
+    webbrowser.open_new(validate_url)
+    # QDesktopServices.openUrl(QUrl(validate_url))
+
 def add_layers_from_service(url: str, iface):
     layers, service_type = fetch_capabilities(url)
     if not layers:
@@ -208,7 +227,7 @@ def copy_to_clipboard(text: str):
     clipboard = QApplication.clipboard()
     clipboard.setText(text)
 
-def create_action_button(url, iface, teryt="X"):
+def create_action_button(url, iface, teryt="X", baza="X"):
     btn = QToolButton()
     btn.setText("Dodaj")
     btn.setPopupMode(QToolButton.MenuButtonPopup)
@@ -231,11 +250,6 @@ def create_action_button(url, iface, teryt="X"):
     copy_action.triggered.connect(lambda: copy_to_clipboard(url.split("?")[0] if "?" in url else url))
     # copy_wfs_action.triggered.connect(lambda: copy_to_clipboard(wfs_url))
 
-    if teryt != "X":
-        ...
-        # btn_val = QAction("Waliduj usługę", btn)
-        # btn_val.triggered.connect(lambda _, i=inspect_url: QDesktopServices.openUrl(QUrl(i)))
-        # menu.addAction(add_action)
 
     # Dodanie do menu
     menu.addAction(add_action)
@@ -244,6 +258,11 @@ def create_action_button(url, iface, teryt="X"):
     menu.addAction(copy_gc)
     menu.addAction(copy_action)
     # menu.addAction(copy_wfs_action)
+
+    if teryt != "X" and baza != "X":
+        add_walidator = QAction("Waliduj usługę", btn)
+        add_walidator.triggered.connect(lambda: validate_service(url, teryt, baza, iface))
+        menu.addAction(add_walidator)
 
     btn.setMenu(menu)
     return btn
@@ -344,6 +363,9 @@ class Power_EZiUDP:
         self.pluginIsActive = False
         self.dockwidget = None
         self.debug = QSettings().value("Power_EZiUDP/debug", False, type=bool) # NEW
+
+        self.db_path = os.path.join(self.plugin_dir, "backup.sqlite")
+        self.init_db()
         # Wczytaj warstwę GeoJSON z TERYT (jeśli istnieje)
         self.layer_teryt = None
         geojson_path = os.path.join(self.plugin_dir, "powiaty.geojson")
@@ -569,38 +591,57 @@ class Power_EZiUDP:
             jedn = "centralne"
             teryt = "PL"
 
+        # Logika backup
+        use_backup = False
+        html = None
+
         url = f"https://integracja.gugik.gov.pl/eziudp/index.php?teryt={teryt}&rodzaj={jedn}&nazwa={organ_text}&zbior={fraz_text}&temat=&usluga=&adres={adres_text}"
         try:
             html = requests.get(url, timeout=10).text
         except Exception as e:
-            QtWidgets.QMessageBox.critical(None, "Błąd", f"Nie udało się pobrać danych:\n{e}")
-            return
-
-        rows = re.findall(r"<tr.*?>(.*?)</tr>", html, re.S | re.I)
-        if not rows:
-            QtWidgets.QMessageBox.warning(None, "Brak danych", "Nie znaleziono żadnych zbiorów dla tego TERYT.")
-            return
-
+            QtWidgets.QMessageBox.critical(None, "Błąd", f"Brak połączenia. Szukam w bazie offline...:\n{e}\n")
+            use_backup = True
+            #return
+        
         self.dockwidget.resultsTable.setRowCount(0)
 
-        for row_html in rows[1:]:
-            cols = re.findall(r"<td.*?>(.*?)</td>", row_html, re.S | re.I)
-            if len(cols) < 2:
-                continue
-            nazwa = re.sub(r"<.*?>", "", cols[0]).strip()
-            organ = re.sub(r"<.*?>", "", cols[1]).strip()
-            rodzaj = re.sub(r"<.*?>", "", cols[2]).strip()
-            teryt = re.sub(r"<.*?>", "", cols[3]).strip()
-            wms_match = re.search(r'(https?://[^\s"\'<>]+?service=WMS[^\s"\'<>]*)', row_html, re.I)
-            wfs_match = re.search(r'(https?://[^\s"\'<>]+?service=WFS[^\s"\'<>]*)', row_html, re.I)
-            inspect_match = re.search(r'(index.php[^\s"\'<>]+?edycja[^\s"\'<>]*)', row_html, re.I)
-            wms_url = wms_match.group(1) if wms_match else ""
-            wfs_url = wfs_match.group(1) if wfs_match else ""
-            inspect = inspect_match.group(1) if inspect_match else ""
+        if not use_backup:
 
-            row = self.dockwidget.resultsTable.rowCount()
+            rows = re.findall(r"<tr.*?>(.*?)</tr>", html, re.S | re.I)
+            if not rows:
+                QtWidgets.QMessageBox.warning(None, "Brak danych", "Nie znaleziono żadnych zbiorów dla tego TERYT.")
+                return
+
+            self.dockwidget.resultsTable.setRowCount(0)
+
+            for row_html in rows[1:]:
+                cols = re.findall(r"<td.*?>(.*?)</td>", row_html, re.S | re.I)
+                if len(cols) < 2:
+                    continue
+                nazwa = re.sub(r"<.*?>", "", cols[0]).strip()
+                organ = re.sub(r"<.*?>", "", cols[1]).strip()
+                rodzaj = re.sub(r"<.*?>", "", cols[2]).strip()
+                teryt = re.sub(r"<.*?>", "", cols[3]).strip()
+                wms_match = re.search(r'(https?://[^\s"\'<>]+?service=WMS[^\s"\'<>]*)', row_html, re.I)
+                wfs_match = re.search(r'(https?://[^\s"\'<>]+?service=WFS[^\s"\'<>]*)', row_html, re.I)
+                inspect_match = re.search(r'(index.php[^\s"\'<>]+?edycja[^\s"\'<>]*)', row_html, re.I)
+                wms_url = wms_match.group(1) if wms_match else ""
+                wfs_url = wfs_match.group(1) if wfs_match else ""
+                inspect = inspect_match.group(1) if inspect_match else ""
+
+                #   row = self.dockwidget.resultsTable.rowCount()
+                self.add_row_to_table(nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect)
+        else:
+            db_results = self.search_in_db(teryt, organ_text, fraz_text, jedn)
+            if not db_results:
+                QtWidgets.QMessageBox.warning(None, "Brak danych", "Brak wyników w bazie offline (czy wykonałeś aktualizację?).")
+                return
             
+            for row_data in db_results:
+                # row_data zawiera tuple zgodną z kolejnością w SELECT
+                self.add_row_to_table(*row_data)
 
+            """
             btn_wms = QtWidgets.QPushButton("")
             btn_wfs = QtWidgets.QPushButton("")
             btn_preview = QtWidgets.QPushButton("")
@@ -649,6 +690,7 @@ class Power_EZiUDP:
             self.dockwidget.resultsTable.setCellWidget(row, 5, btn_wfs)
             self.dockwidget.resultsTable.setCellWidget(row, 6, btn_preview)
             self.dockwidget.resultsTable.setCellWidget(row, 7, btn_inspect)
+            """
 
     def search_by_name_and_show_dialog(self, name_query):
         """Szukaj w layer_teryt jednostek zaczynających się od name_query (case-insensitive).
@@ -774,6 +816,63 @@ class Power_EZiUDP:
         self.load_teryt_layer()
         self.build_completer_for_layer()
 
+    def add_row_to_table(self, nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect):
+        """Pomocnicza metoda dodająca wiersz do tabeli wyników."""
+        row = self.dockwidget.resultsTable.rowCount()
+        
+        btn_wms = QtWidgets.QPushButton("")
+        btn_wfs = QtWidgets.QPushButton("")
+        btn_preview = QtWidgets.QPushButton("")
+        btn_inspect = QtWidgets.QPushButton("📃")
+        btn_teryt = QtWidgets.QPushButton(teryt)
+        btn_teryt.setFlat(True)
+        btn_teryt.clicked.connect(lambda _, t=teryt: self.zoom_to(t))
+
+        url_count = 0
+        if wms_url:
+            if len(teryt) == 4:
+                btn_wms = create_action_button(wms_url, self.iface, teryt, rodzaj)
+            else:       
+                btn_wms = create_action_button(wms_url, self.iface)
+            btn_wms.setIcon(QIcon(":/images/themes/default/mActionAddRasterLayer.svg"))
+            btn_preview.clicked.connect(lambda _, t=teryt, u=wms_url: self.open_geoportal_preview(t, u))
+            btn_preview.setText('🌐')
+            url_count += 1
+        else:
+            btn_wms.setEnabled(False)
+            btn_preview.setEnabled(False)
+            
+        if wfs_url:
+            if len(teryt) == 4:
+                btn_wfs = create_action_button(wfs_url, self.iface, teryt, rodzaj)
+            else:
+                btn_wfs = create_action_button(wfs_url, self.iface)
+            btn_wfs.setIcon(QIcon(":/images/themes/default/mActionAddOgrLayer.svg"))
+            url_count += 1
+        else:
+            btn_wfs.setEnabled(False)
+            
+        if inspect:
+            if not inspect.startswith("http"):
+                inspect_url = f"https://integracja.gugik.gov.pl/eziudp/{inspect}"
+            else:
+                inspect_url = inspect
+            btn_inspect.clicked.connect(lambda _, i=inspect_url: QDesktopServices.openUrl(QUrl(i)))
+        else:
+            btn_inspect.setEnabled(False) 
+
+        if url_count == 0 and self.dockwidget.checkSkipEmptyUrl.isChecked():
+            return
+
+        self.dockwidget.resultsTable.insertRow(row)
+        self.dockwidget.resultsTable.setItem(row, 0, QtWidgets.QTableWidgetItem(nazwa))
+        self.dockwidget.resultsTable.setItem(row, 1, QtWidgets.QTableWidgetItem(organ))
+        self.dockwidget.resultsTable.setItem(row, 2, QtWidgets.QTableWidgetItem(rodzaj))
+        self.dockwidget.resultsTable.setCellWidget(row, 3, btn_teryt)
+        self.dockwidget.resultsTable.setCellWidget(row, 4, btn_wms)
+        self.dockwidget.resultsTable.setCellWidget(row, 5, btn_wfs)
+        self.dockwidget.resultsTable.setCellWidget(row, 6, btn_preview)
+        self.dockwidget.resultsTable.setCellWidget(row, 7, btn_inspect)
 
     # ===============================
     # URUCHOMIENIE PLUGINU
@@ -787,10 +886,153 @@ class Power_EZiUDP:
                 self.dockwidget.pointButton.clicked.connect(self.activate_point_tool)
                 self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dockwidget)
                 self.dockwidget.comboBox.currentIndexChanged.connect(self.on_unit_type_changed)
+                self.dockwidget.updateButton.clicked.connect(self.update_database)
                 self.build_completer_for_layer()
 
             self.dockwidget.show()
         else:
             self.dockwidget.show()
             self.dockwidget.raise_()
+
+
+    # ===============================
+    # OBSŁUGA BAZY DANYCH SQLITE
+    # ===============================
+    def init_db(self):
+        """Tworzy tabelę w SQLite jeśli nie istnieje."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            # Tworzymy tabelę z constraintem UNIQUE, aby unikać duplikatów
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS eziudp_data (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nazwa TEXT,
+                    organ TEXT,
+                    rodzaj TEXT,
+                    teryt TEXT,
+                    wms_url TEXT,
+                    wfs_url TEXT,
+                    inspect_url TEXT,
+                    UNIQUE(nazwa, teryt, wms_url, wfs_url)
+                )
+            """)
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            self.log(f"Błąd inicjalizacji DB: {e}", Qgis.Critical)
+
+    def update_database(self):
+        """Pobiera wszystkie dane z ?showall i zapisuje do bazy."""
+        url = "https://integracja.gugik.gov.pl/eziudp/index.php?showall"
+        
+        # Zmieniamy kursor na "oczekiwanie", bo pobieranie dużej strony może trwać
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            self.iface.messageBar().pushMessage("EZiUDP", "Pobieranie danych do backupu...", level=Qgis.Info)
+            response = requests.get(url, timeout=30) # Dłuższy timeout dla dużej listy
+            html = response.text
+        except Exception as e:
+            QApplication.restoreOverrideCursor()
+            QtWidgets.QMessageBox.critical(None, "Błąd", f"Nie udało się pobrać danych do backupu:\n{e}")
+            return
+
+        rows = re.findall(r"<tr.*?>(.*?)</tr>", html, re.S | re.I)
+        if not rows:
+            QApplication.restoreOverrideCursor()
+            return
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Opcjonalnie: Wyczyść stare dane, aby baza nie rosła w nieskończoność
+            cursor.execute("DELETE FROM eziudp_data")
+            
+            count = 0
+            for row_html in rows[1:]: # pomijamy nagłówek tabeli
+                cols = re.findall(r"<td.*?>(.*?)</td>", row_html, re.S | re.I)
+                if len(cols) < 2:
+                    continue
+                
+                # Parsowanie HTML (to samo co przy zwykłym szukaniu)
+                nazwa = re.sub(r"<.*?>", "", cols[0]).strip()
+                organ = re.sub(r"<.*?>", "", cols[1]).strip()
+                rodzaj = re.sub(r"<.*?>", "", cols[2]).strip()
+                teryt = re.sub(r"<.*?>", "", cols[3]).strip()
+                
+                wms_match = re.search(r'(https?://[^\s"\'<>]+?service=WMS[^\s"\'<>]*)', row_html, re.I)
+                wfs_match = re.search(r'(https?://[^\s"\'<>]+?service=WFS[^\s"\'<>]*)', row_html, re.I)
+                inspect_match = re.search(r'(index.php[^\s"\'<>]+?edycja[^\s"\'<>]*)', row_html, re.I)
+                
+                wms_url = wms_match.group(1) if wms_match else ""
+                wfs_url = wfs_match.group(1) if wfs_match else ""
+                inspect = inspect_match.group(1) if inspect_match else ""
+
+                cursor.execute("""
+                    INSERT OR IGNORE INTO eziudp_data (nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect_url)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect))
+                count += 1
+            
+            conn.commit()
+            conn.close()
+            self.iface.messageBar().pushMessage("EZiUDP", f"Zaktualizowano bazę offline. Rekordów: {count}", level=Qgis.Success)
+        
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(None, "Błąd Bazy", f"Błąd zapisu do SQLite:\n{e}")
+        finally:
+            QApplication.restoreOverrideCursor()
+
+    def search_in_db(self, teryt, organ_pattern, fraz_pattern, jedn):
+        """Wyszukuje w lokalnej bazie SQLite."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            query = "SELECT nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect_url FROM eziudp_data WHERE 1=1"
+            params = []
+
+            if jedn == "powiaty":
+                if len(teryt) == 3:
+                    teryt = f"0{teryt}"
+                teryt = teryt[:4]
+            elif jedn == "wojewodztwa":
+                teryt = teryt[:2]
+            elif jedn == "gminy":
+                teryt = teryt[:6]
+            elif jedn == "jednostki centralne":
+                jedn = "centralne"
+                teryt = "PL"
+            
+            # Budowanie zapytania SQL dynamicznie
+            if teryt:
+                if jedn == "powiaty":
+                   query += " AND teryt LIKE ? AND LENGTH(teryt) == 4" 
+                   params.append(f"{teryt}%")
+                elif jedn == "gminy":
+                    query += " AND teryt LIKE ? AND LENGTH(teryt) > 4"
+                    params.append(f"{teryt}%")
+                elif jedn == "wojewodztwa":
+                    query += " AND teryt LIKE ? AND LENGTH(teryt) == 2"
+                    params.append(f"{teryt}%")
+                else:
+                    query += " AND teryt LIKE ?"
+                    params.append(f"{teryt}%")
+            
+            if organ_pattern:
+                query += " AND organ LIKE ?"
+                params.append(f"%{organ_pattern}%")
+                
+            if fraz_pattern:
+                query += " AND nazwa LIKE ?"
+                params.append(f"%{fraz_pattern}%")
+                
+            cursor.execute(query, params)
+            results = cursor.fetchall()
+            conn.close()
+            return results
+        except Exception as e:
+            self.log(f"Błąd odczytu DB: {e}", Qgis.Critical)
+            return []
 
