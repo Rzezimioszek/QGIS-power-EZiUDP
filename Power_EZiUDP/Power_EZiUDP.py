@@ -179,6 +179,7 @@ def validate_service(url, teryt, baza, iface):
     url = url.split("?")[0]
 
     validate_url = f" https://walidator.gugik.gov.pl/service?url={url}&typ={typ}&dane={dane}&teryt={teryt}"
+    QgsMessageLog.logMessage(f"Walidacja usługi: {validate_url}", "Power_EZiUDP", Qgis.Info)
     # iface.messageBar().pushWarning("EZiUDP", f"{validate_url}")
     webbrowser.open_new(validate_url)
     # QDesktopServices.openUrl(QUrl(validate_url))
@@ -227,45 +228,7 @@ def copy_to_clipboard(text: str):
     clipboard = QApplication.clipboard()
     clipboard.setText(text)
 
-def create_action_button(url, iface, teryt="X", baza="X"):
-    btn = QToolButton()
-    btn.setText("Dodaj")
-    btn.setPopupMode(QToolButton.MenuButtonPopup)
 
-    # Menu rozwijane
-    menu = QMenu()
-
-    # Akcje
-    add_action = QAction("Dodaj warstwy", btn)
-    # add_wfs_action = QAction("Dodaj WFS", btn)
-    copy_action = QAction("Kopiuj adres URL", btn)
-    copy_gc = QAction("Kopiuj adres Get Capabilities", btn)
-    # copy_wfs_action = QAction("Kopiuj adres WFS", btn)
-
-    # Podpięcie akcji
-    btn.clicked.connect(lambda: add_layers_from_service(url, iface))
-    add_action.triggered.connect(lambda: add_layers_from_service(url, iface))
-    # add_wfs_action.triggered.connect(lambda: add_service_to_qgis(wfs_url, "WFS"))
-    copy_gc.triggered.connect(lambda: copy_to_clipboard(url))
-    copy_action.triggered.connect(lambda: copy_to_clipboard(url.split("?")[0] if "?" in url else url))
-    # copy_wfs_action.triggered.connect(lambda: copy_to_clipboard(wfs_url))
-
-
-    # Dodanie do menu
-    menu.addAction(add_action)
-    # menu.addAction(add_wfs_action)
-    menu.addSeparator()
-    menu.addAction(copy_gc)
-    menu.addAction(copy_action)
-    # menu.addAction(copy_wfs_action)
-
-    if teryt != "X" and baza != "X":
-        add_walidator = QAction("Waliduj usługę", btn)
-        add_walidator.triggered.connect(lambda: validate_service(url, teryt, baza, iface))
-        menu.addAction(add_walidator)
-
-    btn.setMenu(menu)
-    return btn
 
 class TerytSelectionDialog(QDialog):
     """Okno wyboru jednostki TERYT z podświetleniem na mapie.
@@ -812,6 +775,83 @@ class Power_EZiUDP:
                                                  f"{e}",
                                                    level=Qgis.Critical, duration=5)
 
+    def validate_with_coordinates(self, url, dane):
+        """Uruchamia narzędzie wskazywania punktu, a następnie waliduje usługę WMS w tym punkcie."""
+        
+        def on_point(point):
+            # Transformacja do EPSG:2180
+            canvas_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
+            target_crs = QgsCoordinateReferenceSystem("EPSG:2180")
+            xform = QgsCoordinateTransform(canvas_crs, target_crs, QgsProject.instance())
+            pt_2180 = xform.transform(point)
+            
+            clean_url = url.split("?")[0]
+            # https://walidator.gugik.gov.pl/service?url=...&dane=...&typ=WMS&CRS=EPSG:2180&X=...&Y=...
+            # Zapewnienie, że dane są uppercase (np. GESUT, BDSOG)
+            dane_str = dane.upper()
+            
+            val_url = (f"https://walidator.gugik.gov.pl/service?"
+                       f"url={clean_url}&dane={dane_str}&typ=WMS&CRS=EPSG:2180"
+                       f"&X={pt_2180.y():.2f}&Y={pt_2180.x():.2f}")
+            
+            QgsMessageLog.logMessage(f"Walidacja usługi (współrzędne): {val_url}", "Power_EZiUDP", Qgis.Info)
+            webbrowser.open_new(val_url)
+            self.iface.messageBar().pushMessage("EZiUDP", f"Otwarto walidator dla {dane_str} w przeglądarce.", duration=4)
+
+        self.iface.messageBar().pushMessage("EZiUDP", f"Wskaż obiekt ({dane}) na mapie do walidacji...", duration=5)
+        self.point_tool = PointTool(self.iface, on_point)
+        self.iface.mapCanvas().setMapTool(self.point_tool)
+
+    def create_action_button(self, url, teryt="X", baza="X"):
+        btn = QToolButton()
+        btn.setText("Dodaj")
+        btn.setPopupMode(QToolButton.MenuButtonPopup)
+
+        # Menu rozwijane
+        menu = QMenu()
+
+        # Akcje standardowe
+        add_action = QAction("Dodaj warstwy", btn)
+        copy_action = QAction("Kopiuj adres URL", btn)
+        copy_gc = QAction("Kopiuj adres Get Capabilities", btn)
+
+        # Podpięcie akcji
+        btn.clicked.connect(lambda: add_layers_from_service(url, self.iface))
+        add_action.triggered.connect(lambda: add_layers_from_service(url, self.iface))
+        copy_gc.triggered.connect(lambda: copy_to_clipboard(url))
+        copy_action.triggered.connect(lambda: copy_to_clipboard(url.split("?")[0] if "?" in url else url))
+
+        # Dodanie do menu
+        menu.addAction(add_action)
+        menu.addSeparator()
+        menu.addAction(copy_gc)
+        menu.addAction(copy_action)
+
+        if teryt != "X" and baza != "X":
+            # 1. Walidacja ogólna (EGiB i inne - przekierowanie do walidatora bez współrzędnych lub z terytem)
+            add_walidator = QAction("Waliduj usługę", btn)
+            add_walidator.triggered.connect(lambda: validate_service(url, teryt, baza, self.iface))
+            menu.addAction(add_walidator)
+
+            # 2. Walidacja ze współrzędnymi (RCN, BDOT500, GESUT, BDSOG)
+            # Próba wyciągnięcia kodu bazy z nawiasu np. "Geodezyjna Ewidencja ... (GESUT)" -> GESUT
+            try:
+                wzorzec = r'\((.*?)\)'
+                matches = re.findall(wzorzec, baza)
+                if matches:
+                    dane_code = matches[0].upper()
+                    supported_coords = ["RCN", "BDOT500", "GESUT", "BDSOG"]
+                    
+                    if dane_code in supported_coords:
+                        add_walidator_coords = QAction("Waliduj usługę (wskazanie obiektu)", btn)
+                        add_walidator_coords.triggered.connect(lambda: self.validate_with_coordinates(url, dane_code))
+                        menu.addAction(add_walidator_coords)
+            except Exception as e:
+                print(f"Błąd parsowania bazy dla walidatora: {e}")
+
+        btn.setMenu(menu)
+        return btn
+
     def on_unit_type_changed(self, idx):
         self.load_teryt_layer()
         self.build_completer_for_layer()
@@ -831,9 +871,9 @@ class Power_EZiUDP:
         url_count = 0
         if wms_url:
             if len(teryt) == 4:
-                btn_wms = create_action_button(wms_url, self.iface, teryt, rodzaj)
+                btn_wms = self.create_action_button(wms_url, teryt, rodzaj)
             else:       
-                btn_wms = create_action_button(wms_url, self.iface)
+                btn_wms = self.create_action_button(wms_url)
             btn_wms.setIcon(QIcon(":/images/themes/default/mActionAddRasterLayer.svg"))
             btn_preview.clicked.connect(lambda _, t=teryt, u=wms_url: self.open_geoportal_preview(t, u))
             btn_preview.setText('🌐')
@@ -844,9 +884,9 @@ class Power_EZiUDP:
             
         if wfs_url:
             if len(teryt) == 4:
-                btn_wfs = create_action_button(wfs_url, self.iface, teryt, rodzaj)
+                btn_wfs = self.create_action_button(wfs_url, teryt, rodzaj)
             else:
-                btn_wfs = create_action_button(wfs_url, self.iface)
+                btn_wfs = self.create_action_button(wfs_url)
             btn_wfs.setIcon(QIcon(":/images/themes/default/mActionAddOgrLayer.svg"))
             url_count += 1
         else:
