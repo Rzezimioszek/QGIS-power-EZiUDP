@@ -38,7 +38,7 @@ class LayerSelectionDialog(QDialog):
     def __init__(self, layers, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Wybierz warstwy do dodania")
-        self.resize(650, 450)  # Zwiększamy rozmiar dla lepszej czytelności tabeli
+        self.resize(700, 550)  # Zwiększamy rozmiar dla lepszej czytelności tabeli i nowych przycisków
 
         layout = QVBoxLayout(self)
 
@@ -47,6 +47,21 @@ class LayerSelectionDialog(QDialog):
         self.search_box.setPlaceholderText("Filtruj po nazwie lub tytule warstwy...")
         self.search_box.textChanged.connect(self.filter_table)
         layout.addWidget(self.search_box)
+
+        # 1a. Przyciski zaznaczania
+        selection_layout = QtWidgets.QHBoxLayout()
+        self.btn_select_all = QPushButton("Zaznacz wszystko")
+        self.btn_deselect_all = QPushButton("Odznacz wszystko")
+        self.btn_invert = QPushButton("Odwróć zaznaczenie")
+        
+        self.btn_select_all.clicked.connect(self.select_all)
+        self.btn_deselect_all.clicked.connect(self.deselect_all)
+        self.btn_invert.clicked.connect(self.invert_selection)
+        
+        selection_layout.addWidget(self.btn_select_all)
+        selection_layout.addWidget(self.btn_deselect_all)
+        selection_layout.addWidget(self.btn_invert)
+        layout.addLayout(selection_layout)
 
         # 2. Tabela zamiast listy
         self.table_widget = QTableWidget()
@@ -82,10 +97,118 @@ class LayerSelectionDialog(QDialog):
         self.table_widget.resizeColumnToContents(2) # Dopasuj szerokość kolumny z nazwą
         layout.addWidget(self.table_widget)
         
+        # 2a. Przycisk kopiowania z menu
+        self.btn_copy = QtWidgets.QToolButton()
+        self.btn_copy.setText("Opcje kopiowania...")
+        self.btn_copy.setPopupMode(QtWidgets.QToolButton.InstantPopup)
+        self.btn_copy.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        
+        copy_menu = QMenu(self)
+        
+        act_sel_titles = QAction("Kopiuj tytuły zaznaczonych", self)
+        act_sel_titles.triggered.connect(self.copy_selected_titles)
+        copy_menu.addAction(act_sel_titles)
+        
+        act_all_titles = QAction("Kopiuj tytuły wszystkich", self)
+        act_all_titles.triggered.connect(self.copy_all_titles)
+        copy_menu.addAction(act_all_titles)
+        
+        copy_menu.addSeparator()
+        
+        act_sel_names = QAction("Kopiuj nazwy zaznaczonych", self)
+        act_sel_names.triggered.connect(self.copy_selected_names)
+        copy_menu.addAction(act_sel_names)
+        
+        act_all_names = QAction("Kopiuj nazwy wszystkich", self)
+        act_all_names.triggered.connect(self.copy_all_names)
+        copy_menu.addAction(act_all_names)
+        
+        copy_menu.addSeparator()
+        
+        act_sel_names_csv = QAction("Kopiuj nazwy zazn. (bez przestrzeni, przecinek)", self)
+        act_sel_names_csv.triggered.connect(self.copy_selected_names_csv_no_ns)
+        copy_menu.addAction(act_sel_names_csv)
+        
+        act_all_names_csv = QAction("Kopiuj nazwy wsz. (bez przestrzeni, przecinek)", self)
+        act_all_names_csv.triggered.connect(self.copy_all_names_csv_no_ns)
+        copy_menu.addAction(act_all_names_csv)
+        
+        self.btn_copy.setMenu(copy_menu)
+        layout.addWidget(self.btn_copy)
+
         # 3. Przycisk
         self.btn_ok = QPushButton("Dodaj zaznaczone")
         self.btn_ok.clicked.connect(self.accept)
         layout.addWidget(self.btn_ok)
+
+    def select_all(self):
+        """Zaznacza wszystkie widoczne warstwy."""
+        for i in range(self.table_widget.rowCount()):
+            if not self.table_widget.isRowHidden(i):
+                self.table_widget.item(i, 0).setCheckState(Qt.Checked)
+
+    def deselect_all(self):
+        """Odznacza wszystkie widoczne warstwy."""
+        for i in range(self.table_widget.rowCount()):
+            if not self.table_widget.isRowHidden(i):
+                self.table_widget.item(i, 0).setCheckState(Qt.Unchecked)
+
+    def invert_selection(self):
+        """Odwraca zaznaczenie widocznych warstw."""
+        for i in range(self.table_widget.rowCount()):
+            if not self.table_widget.isRowHidden(i):
+                item = self.table_widget.item(i, 0)
+                if item.checkState() == Qt.Checked:
+                    item.setCheckState(Qt.Unchecked)
+                else:
+                    item.setCheckState(Qt.Checked)
+
+    def copy_selected_titles(self):
+        """Kopiuje tytuły zaznaczonych warstw do schowka."""
+        titles = []
+        for i in range(self.table_widget.rowCount()):
+            if self.table_widget.item(i, 0).checkState() == Qt.Checked:
+                titles.append(self.table_widget.item(i, 1).text())
+        copy_to_clipboard("\n".join(titles))
+
+    def copy_all_titles(self):
+        """Kopiuje tytuły wszystkich warstw do schowka."""
+        titles = [self.table_widget.item(i, 1).text() for i in range(self.table_widget.rowCount())]
+        copy_to_clipboard("\n".join(titles))
+
+    def copy_selected_names(self):
+        """Kopiuje nazwy zaznaczonych warstw do schowka."""
+        names = []
+        for i in range(self.table_widget.rowCount()):
+            if self.table_widget.item(i, 0).checkState() == Qt.Checked:
+                names.append(self.table_widget.item(i, 2).text())
+        copy_to_clipboard("\n".join(names))
+
+    def copy_all_names(self):
+        """Kopiuje nazwy wszystkich warstw do schowka."""
+        names = [self.table_widget.item(i, 2).text() for i in range(self.table_widget.rowCount())]
+        copy_to_clipboard("\n".join(names))
+
+    def copy_selected_names_csv_no_ns(self):
+        """Kopiuje zaznaczone nazwy bez przestrzeni nazw, oddzielone przecinkami."""
+        names = []
+        for i in range(self.table_widget.rowCount()):
+            if self.table_widget.item(i, 0).checkState() == Qt.Checked:
+                name = self.table_widget.item(i, 2).text()
+                if ":" in name:
+                    name = name.split(":")[-1]
+                names.append(name)
+        copy_to_clipboard(",".join(names))
+
+    def copy_all_names_csv_no_ns(self):
+        """Kopiuje wszystkie nazwy bez przestrzeni nazw, oddzielone przecinkami."""
+        names = []
+        for i in range(self.table_widget.rowCount()):
+            name = self.table_widget.item(i, 2).text()
+            if ":" in name:
+                name = name.split(":")[-1]
+            names.append(name)
+        copy_to_clipboard(",".join(names))
 
     def filter_table(self, text):
         """Filtruje wiersze w tabeli na podstawie wprowadzonego tekstu."""
@@ -185,9 +308,14 @@ def validate_service(url, teryt, baza, iface):
     # QDesktopServices.openUrl(QUrl(validate_url))
 
 def add_layers_from_service(url: str, iface):
+    if ";" in url:
+        iface.messageBar().pushWarning("EZiUDP", f"{url}")
+        
+
+    url = url.split("?")[0] if "?" in url else url
     layers, service_type = fetch_capabilities(url)
     if not layers:
-        iface.messageBar().pushWarning("EZiUDP", f"Nie udało się pobrać listy warstw z\nURL:{service_type}")
+        iface.messageBar().pushWarning("EZiUDP", f"Nie udało się pobrać listy warstw z\nURL:{url}")
         return
 
     dlg = LayerSelectionDialog(layers)
