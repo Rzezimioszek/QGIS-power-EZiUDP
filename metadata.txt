@@ -1,0 +1,92 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Power EZiUDP
+qgisMinimumVersion=3.22
+qgisMaximiumVersion=3.99
+description=[PL] Wtyczka pozwala na proste, szybkie przeszukiwanie i podpinanie usług WMS/WFS z ewidencji zbiorów i uług danych przestrzennych. [EN] Plugin allow for simple, fast search and add WMS/WFS services from polish site: "ewidencja zbiorów i usług danych przestrzennych"
+version=1.8
+author=Łukasz Świątek
+email=lukasz.swiatek1996@gmaill.com
+
+about=[PL] Wtyczka zapewnia dostęp do EZiUDP prosto z poziomu UI QGIS [EN] Plugin provide access to EZiUDP straight from QGIS UI
+tracker=https://github.com/Rzezimioszek/QGIS-power-EZiUDP/issues
+repository=https://github.com/Rzezimioszek/QGIS-power-EZiUDP
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=no
+# Uncomment the following line and add your changelog:
+changelog= 
+	1.8
+	Dodano:
+		* opcje googlowania organu administarcji (opcja po rozwinięŞciu strzałki w ostatniej kolumnie)
+		* możliwość nie tylko kopiowania ale bezpośredniego otwierania Llnku GetCapabilities w przeglądarce
+		* dodano checkbox z żadaniem WFS tylko w zasięgu mapy
+	1.7
+	Rozbudowano menadżer dodawania warstw
+	1.6
+	Dodano:
+		* aktualizacja gmin wziązku ze zmianami PRG
+		* możliwość walidacji uług powiatowych WMS walidatorem GUGiK ze wskazaniem punktu do walidacji
+	1.5
+	Dodano:
+		* backup wykorzystywany w sytuacji braku połączenia z serwerem EZiUDP
+		* dodano przycisk aktualizacji backupu
+		* dodano przekierowanie do walidatora usług WMS/WFS dla usług powiatowych
+	1.4
+	Naprawa błędu z importem QListWidget
+	1.3
+	Dodano:
+		* poprawki w UI
+		* sortowanie kolumn
+		* dodano tryb rozszerzony (usunięto funkcjonalność #)
+		* kliknięcie w komórkę teryt przybliża do zakresu jednostki o tym terycie
+		* dodano pomijanie zbiorów bez url
+		* dodano filtrowanie w wyborze warstw
+	1.2
+	Dodano:
+		* dodatkowe opcje wyboru dla dodawania WMS/WFS
+		* przeniesiono pasek wyszukiwania na doł wtyczki
+		* opisy w tooltipach
+		* poprawka tytułów warstw, gdy w nagłówku GetCababilities nie ma kodowania znaków
+		* poprawka błędu przy wyszukiwaniu jednostek centralnych
+		* niepodanie terytu lub nazwy wyszukuje wszystkie zbiory dla rodzaju jednostki administracyjnej
+		* wartość w polu wyszukiwana podana po znaku # jest traktowana jako element nazwy zbioru np. "12#egib" z zanzaczonymi powiatami wyszuka zbiory powiatowe egib dla terytów zaczynających się od 12, a "#egib" wyszuka wszystkie zbiory egib dla powiatów
+		* usprawnienie wyszukiwanie powiatów, np. nie trzeba wpisywać "powiat poznań", wystarczy "poznań", aby wyszukać powiaty poznański i Poznań
+	1.1
+	Dodano:
+		* podpis z nazwą jednostki po wskazaniu punktu w zasięgu więcej niż jednej jednostki
+		* wyszukiwanie jednostki po jej nazwie
+		* podpowiedzi w pasku wyszukiwania
+		* błąd z "zamnięciem na amen dockwidget"
+	1.0
+	Dodano:
+		* Pierwsze publiczne wydanie
+
+# Tags are comma separated with spaces allowed
+tags=python,eziudp,ewidencja,usługi przetrzenne,wms,wfs,zbiory
+
+homepage=https://github.com/Rzezimioszek
+category=Plugins
+icon=icon1.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+Category of the plugin: Raster, Vector, Database or Web
+# category=
+
+# If the plugin can run on QGIS Server.
+server=False
+

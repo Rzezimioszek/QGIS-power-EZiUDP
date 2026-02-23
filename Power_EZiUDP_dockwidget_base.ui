@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>eziudp_plugin2DockWidgetBase</class>
+ <widget class="QDockWidget" name="eziudp_plugin2DockWidgetBase">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>820</width>
+    <height>431</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Power EZiUDP - ewidencja zbiorów i usług danych przestrzennych</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="2" column="0">
+     <widget class="QTableWidget" name="resultsTable">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="sortingEnabled">
+       <bool>true</bool>
+      </property>
+      <column>
+       <property name="text">
+        <string>Identyfikator</string>
+       </property>
+       <property name="toolTip">
+        <string>Identyfikator zbioru w EZiUDP</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Organ</string>
+       </property>
+       <property name="toolTip">
+        <string>Ogran administracyjny, który prowadzi zbiór</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Typ</string>
+       </property>
+       <property name="toolTip">
+        <string>Nazwa zbioru którego dotyczą dane przestrzenne</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>TERYT</string>
+       </property>
+       <property name="toolTip">
+        <string>Numer teryt obszaru, którego dotyczy zbiór</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>WMS</string>
+       </property>
+       <property name="toolTip">
+        <string>Przycisk dodający usługę przeglądania do QGIS</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>WFS</string>
+       </property>
+       <property name="toolTip">
+        <string>Przycisk dodający usługę pobierania do QGIS</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Podgląd</string>
+       </property>
+       <property name="toolTip">
+        <string>Podgląd usługi przeglądania WMS w geoportalu krajowym</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Szczegóły</string>
+       </property>
+       <property name="toolTip">
+        <string>Szczegóły zbioru zamieszczone na stronie EZiUDP</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="checkSkipEmptyUrl">
+          <property name="text">
+           <string>pomijaj zbiory bez URL</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox">
+          <property name="text">
+           <string>Tryb rozszerzony</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="font">
+           <font>
+            <pointsize>6</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>ŁŚ 2025</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLineEdit" name="jednInput">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string>Nazwa jednostki/Organ</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="frazInput">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string>Fraza w nazwie zbioru</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="adresInput">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string>Adres usługi WMS</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboBox">
+            <property name="currentText">
+             <string>powiaty</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>powiaty</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>gminy</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>wojewodztwa</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>jednostki centralne</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="updateButton">
+            <property name="toolTip">
+             <string>Backup jest wykorzystywany w sytuacji braku dostępu do serwerów EZiUDP. Aktualizuj aby utrzymać atualne adresy w bazie backup (SQLite)</string>
+            </property>
+            <property name="text">
+             <string>Aktualizuj backup</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="terytInput">
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="placeholderText">
+             <string>Wpisz teryt lub nazwę jednostki</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="searchButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>64</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Wyszukaj wpisany teryt lub nazwę</string>
+            </property>
+            <property name="text">
+             <string>🔎
+Wyszukaj</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pointButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>64</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Wskaż na mapie punkt do okoła którego szukać zbioru</string>
+            </property>
+            <property name="text">
+             <string>📍
+Wskaż</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>searchButton</tabstop>
+  <tabstop>checkSkipEmptyUrl</tabstop>
+  <tabstop>pointButton</tabstop>
+  <tabstop>resultsTable</tabstop>
+  <tabstop>checkBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>jednInput</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>141</x>
+     <y>387</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>178</x>
+     <y>387</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>frazInput</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>138</x>
+     <y>396</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>310</x>
+     <y>373</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>adresInput</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>109</x>
+     <y>396</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>432</x>
+     <y>372</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
