@@ -5,9 +5,10 @@
 [general]
 name=Power EZiUDP
 qgisMinimumVersion=3.22
-qgisMaximiumVersion=3.99
+qgisMaximumVersion=4.99
+supportsQt6=True
 description=[PL] Wtyczka pozwala na proste, szybkie przeszukiwanie i podpinanie usług WMS/WFS z ewidencji zbiorów i uług danych przestrzennych. [EN] Plugin allow for simple, fast search and add WMS/WFS services from polish site: "ewidencja zbiorów i usług danych przestrzennych"
-version=1.8
+version=1.9.0
 author=Łukasz Świątek
 email=lukasz.swiatek1996@gmaill.com
 
@@ -21,6 +22,10 @@ repository=https://github.com/Rzezimioszek/QGIS-power-EZiUDP
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
 changelog= 
+	1.9
+	Dodano:
+		* wsparcie dla QGIS4
+		* nowe zakresy dla JST
 	1.8
 	Dodano:
 		* opcje googlowania organu administarcji (opcja po rozwinięŞciu strzałki w ostatniej kolumnie)

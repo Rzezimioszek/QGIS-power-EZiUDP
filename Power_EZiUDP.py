@@ -9,16 +9,17 @@ Power_EZiUDP
 """
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QUrl, QStringListModel
-from qgis.PyQt.QtGui import QIcon, QDesktopServices, QColor, QCursor 
+from qgis.PyQt.QtGui import QIcon, QDesktopServices, QColor, QCursor
 from qgis.PyQt import QtWidgets
 from qgis.core import (
     QgsRasterLayer, QgsVectorLayer, QgsProject, QgsFeatureRequest, QgsGeometry,
     QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsRectangle, QgsFeature, QgsMessageLog, Qgis
 )
-from qgis.PyQt.QtWidgets import (QAction, QDialog, QVBoxLayout, QPushButton, 
+from qgis.PyQt.QtWidgets import (QDialog, QVBoxLayout, QPushButton, 
                                 QCompleter, QApplication, QToolButton, QMenu,
                                 QTableWidget, QTableWidgetItem, QLineEdit,
-                                QHeaderView, QAbstractItemView, QListWidget, QMessageBox)
+                                QHeaderView, QAbstractItemView, QListWidget, QMessageBox,
+                                QAction)
 from qgis.gui import QgsMapToolEmitPoint, QgsRubberBand
 import os.path, re, requests, sqlite3
 
@@ -68,15 +69,15 @@ class LayerSelectionDialog(QDialog):
         self.table_widget = QTableWidget()
         self.table_widget.setColumnCount(3)
         self.table_widget.setHorizontalHeaderLabels(["", "Tytuł", "Nazwa (identyfikator)"])
-        self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_widget.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table_widget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table_widget.setSortingEnabled(True)
         
         # Ustawienie szerokości kolumn
         header = self.table_widget.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents) # Kolumna z checkboxem
-        header.setSectionResizeMode(1, QHeaderView.Stretch) # Tytuł rozciąga się
-        header.setSectionResizeMode(2, QHeaderView.Interactive) # Nazwę można ręcznie rozszerzyć
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents) # Kolumna z checkboxem
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch) # Tytuł rozciąga się
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive) # Nazwę można ręcznie rozszerzyć
 
         # Wypełnienie tabeli danymi
         for name, title in layers:
@@ -85,8 +86,8 @@ class LayerSelectionDialog(QDialog):
             
             # Kolumna 0: Checkbox
             check_item = QTableWidgetItem()
-            check_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-            check_item.setCheckState(Qt.Unchecked)
+            check_item.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
+            check_item.setCheckState(Qt.CheckState.Unchecked)
             self.table_widget.setItem(row_position, 0, check_item)
 
             # Kolumna 1: Tytuł
@@ -101,8 +102,8 @@ class LayerSelectionDialog(QDialog):
         # 2a. Przycisk kopiowania z menu
         self.btn_copy = QtWidgets.QToolButton()
         self.btn_copy.setText("Opcje kopiowania...")
-        self.btn_copy.setPopupMode(QtWidgets.QToolButton.InstantPopup)
-        self.btn_copy.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        self.btn_copy.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.btn_copy.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Preferred)
         
         copy_menu = QMenu(self)
         
@@ -152,29 +153,29 @@ class LayerSelectionDialog(QDialog):
         """Zaznacza wszystkie widoczne warstwy."""
         for i in range(self.table_widget.rowCount()):
             if not self.table_widget.isRowHidden(i):
-                self.table_widget.item(i, 0).setCheckState(Qt.Checked)
+                self.table_widget.item(i, 0).setCheckState(Qt.CheckState.Checked)
 
     def deselect_all(self):
         """Odznacza wszystkie widoczne warstwy."""
         for i in range(self.table_widget.rowCount()):
             if not self.table_widget.isRowHidden(i):
-                self.table_widget.item(i, 0).setCheckState(Qt.Unchecked)
+                self.table_widget.item(i, 0).setCheckState(Qt.CheckState.Unchecked)
 
     def invert_selection(self):
         """Odwraca zaznaczenie widocznych warstw."""
         for i in range(self.table_widget.rowCount()):
             if not self.table_widget.isRowHidden(i):
                 item = self.table_widget.item(i, 0)
-                if item.checkState() == Qt.Checked:
-                    item.setCheckState(Qt.Unchecked)
+                if item.checkState() == Qt.CheckState.Checked:
+                    item.setCheckState(Qt.CheckState.Unchecked)
                 else:
-                    item.setCheckState(Qt.Checked)
+                    item.setCheckState(Qt.CheckState.Checked)
 
     def copy_selected_titles(self):
         """Kopiuje tytuły zaznaczonych warstw do schowka."""
         titles = []
         for i in range(self.table_widget.rowCount()):
-            if self.table_widget.item(i, 0).checkState() == Qt.Checked:
+            if self.table_widget.item(i, 0).checkState() == Qt.CheckState.Checked:
                 titles.append(self.table_widget.item(i, 1).text())
         copy_to_clipboard("\n".join(titles))
 
@@ -187,7 +188,7 @@ class LayerSelectionDialog(QDialog):
         """Kopiuje nazwy zaznaczonych warstw do schowka."""
         names = []
         for i in range(self.table_widget.rowCount()):
-            if self.table_widget.item(i, 0).checkState() == Qt.Checked:
+            if self.table_widget.item(i, 0).checkState() == Qt.CheckState.Checked:
                 names.append(self.table_widget.item(i, 2).text())
         copy_to_clipboard("\n".join(names))
 
@@ -200,7 +201,7 @@ class LayerSelectionDialog(QDialog):
         """Kopiuje zaznaczone nazwy bez przestrzeni nazw, oddzielone przecinkami."""
         names = []
         for i in range(self.table_widget.rowCount()):
-            if self.table_widget.item(i, 0).checkState() == Qt.Checked:
+            if self.table_widget.item(i, 0).checkState() == Qt.CheckState.Checked:
                 name = self.table_widget.item(i, 2).text()
                 if ":" in name:
                     name = name.split(":")[-1]
@@ -235,7 +236,7 @@ class LayerSelectionDialog(QDialog):
         selected_names = []
         for i in range(self.table_widget.rowCount()):
             item = self.table_widget.item(i, 0) # Item z checkboxem
-            if item.checkState() == Qt.Checked:
+            if item.checkState() == Qt.CheckState.Checked:
                 # Pobierz nazwę warstwy z trzeciej kolumny (indeks 2)
                 layer_name = self.table_widget.item(i, 2).text()
                 selected_names.append(layer_name)
@@ -331,7 +332,7 @@ def add_layers_from_service(url: str, iface):
         return
 
     dlg = LayerSelectionDialog(layers, service_type)
-    if dlg.exec_():
+    if dlg.exec():
         selected_layer_names = dlg.get_selected() # Teraz dostajemy czystą listę nazw
         restrict_extent = dlg.is_extent_restricted()
         if not selected_layer_names:
@@ -574,8 +575,8 @@ class Power_EZiUDP:
         model = QStringListModel(names)
         completer = QCompleter()
         completer.setModel(model)
-        completer.setCaseSensitivity(Qt.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchStartsWith)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
         self.dockwidget.terytInput.setCompleter(completer)
         # zapamiętaj referencję jeśli potrzeba
         self._teryt_completer = completer
@@ -658,7 +659,7 @@ class Power_EZiUDP:
                     features.append(feat)
 
             dlg = TerytSelectionDialog(self.iface, self.layer_teryt, features)
-            if dlg.exec_():
+            if dlg.exec():
                 selected_teryt = dlg.get_selected_teryt()
                 if not selected_teryt:
                     return
@@ -849,7 +850,7 @@ class Power_EZiUDP:
 
         # otwórz dialog do wyboru (z podświetleniem)
         dlg = TerytSelectionDialog(self.iface, self.layer_teryt, matches)
-        if dlg.exec_():
+        if dlg.exec():
             sel = dlg.get_selected_teryt()
             if sel:
                 # ustaw w polu i zapisz do historii
@@ -967,7 +968,7 @@ class Power_EZiUDP:
     def create_action_button(self, url, teryt="X", baza="X"):
         btn = QToolButton()
         btn.setText("Dodaj")
-        btn.setPopupMode(QToolButton.MenuButtonPopup)
+        btn.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
 
         # Menu rozwijane
         menu = QMenu()
@@ -1021,7 +1022,7 @@ class Power_EZiUDP:
     def create_detail_button(self, inspect_url, organ):
         btn = QToolButton()
         btn.setText("📃")
-        btn.setPopupMode(QToolButton.MenuButtonPopup)
+        btn.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
 
         # Menu rozwijane
         menu = QMenu()
@@ -1121,7 +1122,7 @@ class Power_EZiUDP:
                 self.dockwidget = Power_EZiUDPDockwidget()
                 self.dockwidget.searchButton.clicked.connect(self.search_eziudp)
                 self.dockwidget.pointButton.clicked.connect(self.activate_point_tool)
-                self.iface.addDockWidget(Qt.BottomDockWidgetArea, self.dockwidget)
+                self.iface.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.dockwidget)
                 self.dockwidget.comboBox.currentIndexChanged.connect(self.on_unit_type_changed)
                 self.dockwidget.updateButton.clicked.connect(self.update_database)
                 self.build_completer_for_layer()
@@ -1164,7 +1165,7 @@ class Power_EZiUDP:
         url = "https://integracja.gugik.gov.pl/eziudp/index.php?showall"
         
         # Zmieniamy kursor na "oczekiwanie", bo pobieranie dużej strony może trwać
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             self.iface.messageBar().pushMessage("EZiUDP", "Pobieranie danych do backupu...", level=Qgis.Info)
             response = requests.get(url, timeout=30) # Dłuższy timeout dla dużej listy
