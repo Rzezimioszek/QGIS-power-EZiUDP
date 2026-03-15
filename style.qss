@@ -1,0 +1,173 @@
+/* Modern QSS with Theme Support */
+
+/* Main Containers */
+#eziudp_plugin2DockWidgetBase {
+    background-color: @bg_color;
+}
+
+QWidget#dockWidgetContents {
+    background-color: @bg_color;
+    font-family: 'Segoe UI', sans-serif;
+    color: @text_color;
+}
+
+/* Common button styles for PushButton and ToolButton */
+QPushButton, QToolButton {
+    background-color: @button_bg;
+    border: 1px solid @border_color;
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: @text_color;
+    font-size: 12px;
+}
+
+QPushButton:hover, QToolButton:hover {
+    background-color: @button_hover_bg;
+    border-radius: 8px;
+    border-color: #0078d4;
+}
+
+QPushButton:pressed, QToolButton:pressed {
+    background-color: @button_pressed_bg;
+}
+
+/* ToolButton specific arrow styling */
+QToolButton::menu-button {
+    border-left: 1px solid @border_color;
+    width: 16px;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+QToolButton::menu-arrow {
+    image: none;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid @text_color;
+    width: 0;
+    height: 0;
+}
+
+/* Primary buttons (blue) */
+#searchButton, #pointButton {
+    background-color: @button_bg;
+    color: @text_color;
+    border: 1px solid @border_color;
+    font-weight: 600;
+    border-radius: 12px;
+}
+
+#searchButton:hover, #pointButton:hover {
+    background-color: #0078d4;
+    border: 1px solid @border_color;
+    color: white;
+}
+
+/* Inputs */
+QLineEdit, QComboBox, QAbstractSpinBox {
+    border: 1px solid @border_color;
+    border-radius: 12px;
+    padding: 5px 8px;
+    background-color: @input_bg;
+    color: @text_color;
+    selection-background-color: #0078d4;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid @border_color;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid @text_color;
+    width: 0;
+    height: 0;
+    margin-right: 2px;
+}
+
+/* Windows and Dialogs */
+QDialog, QMainWindow {
+    background-color: @bg_color;
+    color: @text_color;
+}
+
+
+/* Table */
+QTableWidget {
+    background-color: @input_bg;
+    border: 1px solid @border_color;
+    gridline-color: @border_color;
+    color: @text_color;
+    selection-background-color: @selection_bg;
+    selection-color: @selection_text;
+    outline: none;
+}
+
+QHeaderView::section {
+    background-color: @header_bg;
+    padding: 6px;
+    border: none;
+    border-bottom: 1px solid @border_color;
+    border-right: 1px solid @border_color;
+    font-weight: bold;
+    color: @text_color;
+}
+
+/* CheckBox */
+QCheckBox {
+    color: @text_color;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid @border_color;
+    background-color: @input_bg;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #0078d4;
+    border-color: #0078d4;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    border: none;
+    background: transparent;
+    width: 8px;
+}
+
+QScrollBar::handle:vertical {
+    background: @scrollbar_handle;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #0078d4;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QLineEdit:focus, QComboBox:focus {
+    border: 1px solid #0078d4;
+}
+
+QPushButton:disabled {
+    background-color: transparent;
+    color: #888;
+}

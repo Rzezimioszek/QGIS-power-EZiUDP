@@ -718,15 +718,17 @@ class Power_EZiUDP:
             teryt = "PL"
 
         # Logika backup
-        use_backup = False
+        use_backup = self.dockwidget.checkForceOffline.isChecked()
         html = None
 
         url = f"https://integracja.gugik.gov.pl/eziudp/index.php?teryt={teryt}&rodzaj={jedn}&nazwa={organ_text}&zbior={fraz_text}&temat=&usluga=&adres={adres_text}"
-        try:
-            html = requests.get(url, timeout=10).text
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(None, "Błąd", f"Brak połączenia. Szukam w bazie offline...:\n{e}\n")
-            use_backup = True
+        
+        if not use_backup:
+            try:
+                html = requests.get(url, timeout=10).text
+            except Exception as e:
+                QtWidgets.QMessageBox.critical(None, "Błąd", f"Brak połączenia. Szukam w bazie offline...:\n{e}\n")
+                use_backup = True
             #return
         
         self.dockwidget.resultsTable.setRowCount(0)
@@ -756,7 +758,7 @@ class Power_EZiUDP:
                 inspect = inspect_match.group(1) if inspect_match else ""
 
                 #   row = self.dockwidget.resultsTable.rowCount()
-                self.add_row_to_table(nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect)
+                self.add_row_to_table(nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect, url)
         else:
             db_results = self.search_in_db(teryt, organ_text, fraz_text, jedn)
             if not db_results:
@@ -765,7 +767,7 @@ class Power_EZiUDP:
             
             for row_data in db_results:
                 # row_data zawiera tuple zgodną z kolejnością w SELECT
-                self.add_row_to_table(*row_data)
+                self.add_row_to_table(*row_data, url)
 
             """
             btn_wms = QtWidgets.QPushButton("")
@@ -1019,7 +1021,7 @@ class Power_EZiUDP:
         btn.setMenu(menu)
         return btn
     
-    def create_detail_button(self, inspect_url, organ):
+    def create_detail_button(self, inspect_url, organ, url):
         btn = QToolButton()
         btn.setText("📃")
         btn.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
@@ -1043,6 +1045,14 @@ class Power_EZiUDP:
         query_action.triggered.connect(lambda _, i=f"https://www.google.com/search?q={organ}": QDesktopServices.openUrl(QUrl(i)))
         menu.addAction(query_action)
 
+        organ_action = QAction("Pokaż zbiory organu na stronie EZiUDP", btn)
+        organ_action.triggered.connect(lambda _, i=f"https://integracja.gugik.gov.pl/eziudp/index.php?&nazwa={organ}": QDesktopServices.openUrl(QUrl(i)))
+        menu.addAction(organ_action)
+
+        url_action = QAction("Pokaż wyszukiwanie na stronie EZiUDP", btn)
+        url_action.triggered.connect(lambda _, i=url: QDesktopServices.openUrl(QUrl(i)))
+        menu.addAction(url_action)
+
         btn.setMenu(menu)
         return btn
 
@@ -1051,7 +1061,7 @@ class Power_EZiUDP:
         self.load_teryt_layer()
         self.build_completer_for_layer()
 
-    def add_row_to_table(self, nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect):
+    def add_row_to_table(self, nazwa, organ, rodzaj, teryt, wms_url, wfs_url, inspect, url):
         """Pomocnicza metoda dodająca wiersz do tabeli wyników."""
         row = self.dockwidget.resultsTable.rowCount()
         
@@ -1094,7 +1104,7 @@ class Power_EZiUDP:
             else:
                 inspect_url = inspect
 
-            btn_inspect = self.create_detail_button(inspect_url, organ)
+            btn_inspect = self.create_detail_button(inspect_url, organ, url)
             # btn_inspect.clicked.connect(lambda _, i=inspect_url: QDesktopServices.openUrl(QUrl(i)))
         else:
             btn_inspect.setEnabled(False) 

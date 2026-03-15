@@ -25,7 +25,7 @@
 import os
 
 from qgis.PyQt import QtGui, QtWidgets, uic
-from qgis.PyQt.QtCore import pyqtSignal
+from qgis.PyQt.QtCore import pyqtSignal, QFile, QTextStream
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'Power_EZiUDP_dockwidget_base.ui'))
@@ -44,6 +44,86 @@ class Power_EZiUDPDockwidget(QtWidgets.QDockWidget, FORM_CLASS):
         # http://doc.qt.io/qt-5/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        
+        # Modern UI settings
+        self.apply_modern_style()
+        self.setup_table_ui()
+
+
+
+    def setup_table_ui(self):
+        """Adjust table row height and behavior."""
+        # Set default row height to fit buttons nicely
+        self.resultsTable.verticalHeader().setDefaultSectionSize(40)
+        # Ensure rows don't get too small
+        self.resultsTable.verticalHeader().setMinimumSectionSize(32)
+
+    def apply_modern_style(self):
+        """Applies QSS styling and visual effects with dark mode support."""
+        # Detect if system/QGIS is in dark mode
+        window_color = QtWidgets.QApplication.palette().color(QtGui.QPalette.ColorRole.Window)
+        is_dark = window_color.lightness() < 128
+
+        # Define color themes
+        if is_dark:
+            theme = {
+                "@bg_color": "#1e1f22",
+                "@text_color": "#e8eaed",
+                "@button_bg": "#1e1f22",
+                "@button_hover_bg": "#34363b",
+                "@button_pressed_bg": "#3b3e44",
+                "@border_color": "#44474f",
+                "@input_bg": "#2b2d31",
+                "@input_disabled_bg": "#3c3f41",
+                "@selection_bg": "#0078d4",
+                "@selection_text": "#ffffff",
+                "@header_bg": "#2b2d31",
+                "@scrollbar_handle": "#4e5254"
+            }
+        else:
+            theme = {
+                "@bg_color": "#f8f9fb",
+                "@text_color": "#1f1f1f",
+                "@button_bg": "#ffffff",
+                "@button_hover_bg": "#f1f3f6",
+                "@button_pressed_bg": "#e8eaed",
+                "@border_color": "#d0d5dd",
+                "@input_bg": "#ffffff",
+                "@input_disabled_bg": "#f0f0f0",
+                "@selection_bg": "#e1f0ff",
+                "@selection_text": "#0078d4",
+                "@header_bg": "#f8f9fb",
+                "@scrollbar_handle": "#cdcdcd"
+            }
+
+        # Load and process QSS file
+        style_path = os.path.join(os.path.dirname(__file__), 'style.qss')
+        if os.path.exists(style_path):
+            with open(style_path, 'r', encoding='utf-8') as f:
+                style_content = f.read()
+                # Replace placeholders with theme colors
+                for key, value in theme.items():
+                    style_content = style_content.replace(key, value)
+                
+                # Apply style globally to this dockwidget and its children
+                # (including dialogs opened from it)
+                self.setStyleSheet(style_content)
+
+        # Add shadows to main buttons
+        self.add_shadow(self.searchButton)
+        self.add_shadow(self.pointButton)
+        self.add_shadow(self.updateButton)
+        self.add_shadow(self.updateButton)
+
+
+    def add_shadow(self, widget):
+        """Adds a subtle drop shadow to a widget."""
+        shadow = QtWidgets.QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(15)
+        shadow.setXOffset(0)
+        shadow.setYOffset(4)
+        shadow.setColor(QtGui.QColor(0, 0, 0, 40))
+        widget.setGraphicsEffect(shadow)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()

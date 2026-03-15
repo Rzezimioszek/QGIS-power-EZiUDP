@@ -9,7 +9,8 @@
 
 
 from qgis.PyQt import QtCore, QtGui, QtWidgets
-
+import os
+import resources
 
 class Ui_eziudp_plugin2DockWidgetBase(object):
     def setupUi(self, eziudp_plugin2DockWidgetBase):
@@ -112,6 +113,8 @@ class Ui_eziudp_plugin2DockWidgetBase(object):
         self.searchButton.setSizePolicy(sizePolicy)
         self.searchButton.setMinimumSize(QtCore.QSize(64, 0))
         self.searchButton.setObjectName("searchButton")
+        self.searchButton.setIcon(QtGui.QIcon(":/plugins/Power_EZiUDP/icons/search.svg"))
+        self.searchButton.setIconSize(QtCore.QSize(18, 18))
         self.horizontalLayout_3.addWidget(self.searchButton)
         self.pointButton = QtWidgets.QPushButton(self.dockWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Preferred)
@@ -180,8 +183,9 @@ class Ui_eziudp_plugin2DockWidgetBase(object):
         self.updateButton.setText(_translate("eziudp_plugin2DockWidgetBase", "Aktualizuj backup"))
         self.terytInput.setPlaceholderText(_translate("eziudp_plugin2DockWidgetBase", "Wpisz teryt lub nazwę jednostki"))
         self.searchButton.setToolTip(_translate("eziudp_plugin2DockWidgetBase", "Wyszukaj wpisany teryt lub nazwę"))
-        self.searchButton.setText(_translate("eziudp_plugin2DockWidgetBase", "🔎\n"
-"Wyszukaj"))
+        # self.searchButton.setText(_translate("eziudp_plugin2DockWidgetBase", "🔎\nWyszukaj"))
+        self.searchButton.setText("Wyszukaj")
+        
         self.pointButton.setToolTip(_translate("eziudp_plugin2DockWidgetBase", "Wskaż na mapie punkt do okoła którego szukać zbioru"))
         self.pointButton.setText(_translate("eziudp_plugin2DockWidgetBase", "📍\n"
 "Wskaż"))

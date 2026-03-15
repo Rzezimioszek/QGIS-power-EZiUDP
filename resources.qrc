@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/plugins/Power_EZiUDP" >
         <file>icon.png</file>
+        <file>icons/search.svg</file>
     </qresource>
 </RCC>
